@@ -1,0 +1,5 @@
+# PAC Application Requirements
+# Python dependencies for the project
+
+# GUI Framework (included with Python, but listed for documentation)
+# tkinter - Standard GUI library for Python
