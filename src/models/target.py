@@ -10,6 +10,9 @@ from dataclasses import dataclass
 class Target:
     """Target model with validations and automatic truncation"""
     
+    # Primary key
+    target_id: int = None
+    
     # Alphanumeric fields
     targ_prochapter: str = ""
     targ_pronumber: str = ""

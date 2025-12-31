@@ -486,7 +486,9 @@ class BaseCRUDView(BaseView, ABC):
                     )
                     list_window.destroy()
         
-        tree.bind('<<TreeviewSelect>>', on_select_popup)
+        # Bind both double-click and Enter key
+        tree.bind('<Double-Button-1>', on_select_popup)
+        tree.bind('<Return>', on_select_popup)
         
         # Load all records initially
         load_records()

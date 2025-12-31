@@ -20,11 +20,11 @@ class MaterialsView(BaseCRUDView):
     
     def get_field_definitions(self):
         return [
-            {'name': 'raw_part', 'label': 'Material Part *:', 'type': 'primary', 'width': 12, 'maxlength': 12},
+            {'name': 'raw_part', 'label': 'Part Number  *:', 'type': 'primary', 'width': 12, 'maxlength': 12},
             {'name': 'raw_description', 'label': 'Description *:', 'type': 'secondary', 'width': 30, 'maxlength': 30},
             {'name': 'raw_unit', 'label': 'Unit *:', 'type': 'text', 'width': 10, 'maxlength': 10},
-            {'name': 'raw_price1', 'label': 'Price 1:', 'type': 'numeric', 'width': 15, 'maxlength': 12, 'decimals': 2},
-            {'name': 'raw_price2', 'label': 'Price 2:', 'type': 'numeric', 'width': 15, 'maxlength': 12, 'decimals': 2},
+            {'name': 'raw_price1', 'label': 'Actual Price:', 'type': 'numeric', 'width': 15, 'maxlength': 12, 'decimals': 2},
+            {'name': 'raw_price2', 'label': 'Previous Price:', 'type': 'numeric', 'width': 15, 'maxlength': 12, 'decimals': 2},
             {'name': 'raw_balance', 'label': 'Balance:', 'type': 'numeric', 'width': 15, 'maxlength': 15, 'decimals': 2}
         ]
     

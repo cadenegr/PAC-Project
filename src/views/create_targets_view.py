@@ -48,10 +48,10 @@ class CreateTargetsView(BaseCRUDView):
         return Target
     
     def get_primary_key_name(self):
-        return 'targ_pronumber'
+        return 'target_id'
     
     def get_record_by_primary_key(self, key):
-        return self.db.get_target_by_number(key)
+        return self.db.get_target_by_id(key)
     
     def search_by_secondary_key(self, value):
         return self.db.search_by_description(value)
@@ -66,10 +66,7 @@ class CreateTargetsView(BaseCRUDView):
         return self.db.update_target(model)
     
     def delete_record(self, primary_key):
-        # For targets, we need both chapter and pronumber
-        # Get chapter from form
-        chapter = self.form_builder.entries['targ_prochapter'].get().strip()
-        return self.db.delete_target(chapter, primary_key)
+        return self.db.delete_target_by_id(primary_key)
     
     def get_list_columns(self):
         return [
@@ -79,6 +76,172 @@ class CreateTargetsView(BaseCRUDView):
             ('targ_prounit', 'Unit', 80),
             ('targ_proprice1', 'Price', 120)
         ]
+    
+    def _open_list_popup(self):
+        """Override to handle composite key (chapter + pronumber)"""
+        import tkinter as tk
+        from tkinter import ttk
+        
+        list_window = tk.Toplevel(self.container)
+        list_window.title(f"Lista de {self.get_title()}")
+        list_window.geometry("900x500")
+        list_window.configure(bg=WINDOW_BG_COLOR)
+        
+        # Header
+        header_frame = tk.Frame(list_window, bg=HEADER_BG_COLOR, height=50)
+        header_frame.pack(fill="x")
+        header_frame.pack_propagate(False)
+        
+        title = tk.Label(
+            header_frame,
+            text=f"Lista de {self.get_title()}",
+            font=("Segoe UI", 16, "bold"),
+            bg=HEADER_BG_COLOR,
+            fg=HEADER_TEXT_COLOR
+        )
+        title.pack(pady=10)
+        
+        # Search frame
+        search_frame = tk.Frame(list_window, bg=WINDOW_BG_COLOR)
+        search_frame.pack(fill="x", padx=10, pady=10)
+        
+        tk.Label(
+            search_frame,
+            text="Search:",
+            font=("Segoe UI", 10),
+            bg=WINDOW_BG_COLOR,
+            fg=TEXT_COLOR
+        ).pack(side="left", padx=5)
+        
+        search_entry = tk.Entry(
+            search_frame,
+            font=("Segoe UI", 10),
+            relief="solid",
+            borderwidth=1
+        )
+        search_entry.pack(side="left", fill="x", expand=True, padx=5)
+        
+        # Tree frame
+        tree_frame = tk.Frame(list_window, bg=FRAME_BG_COLOR)
+        tree_frame.pack(fill="both", expand=True, padx=10, pady=10)
+        
+        vsb = ttk.Scrollbar(tree_frame, orient="vertical")
+        hsb = ttk.Scrollbar(tree_frame, orient="horizontal")
+        
+        columns = self.get_list_columns()
+        column_names = [col[0] for col in columns]
+        
+        tree = ttk.Treeview(
+            tree_frame,
+            columns=column_names,
+            show="headings",
+            yscrollcommand=vsb.set,
+            xscrollcommand=hsb.set,
+            height=15
+        )
+        
+        vsb.config(command=tree.yview)
+        hsb.config(command=tree.xview)
+        
+        for col_name, col_display, col_width in columns:
+            tree.heading(col_name, text=col_display)
+            # Alinear columna Price a la derecha
+            if col_name == 'targ_proprice1':
+                tree.column(col_name, width=col_width, anchor='e')
+            else:
+                tree.column(col_name, width=col_width)
+        
+        tree.grid(row=0, column=0, sticky="nsew")
+        vsb.grid(row=0, column=1, sticky="ns")
+        hsb.grid(row=1, column=0, sticky="ew")
+        
+        tree_frame.grid_rowconfigure(0, weight=1)
+        tree_frame.grid_columnconfigure(0, weight=1)
+        
+        def load_records(search_term=""):
+            """Load records into tree"""
+            for item in tree.get_children():
+                tree.delete(item)
+            
+            if search_term:
+                records = self.search_by_secondary_key(search_term)
+            else:
+                records = self.get_all_records()
+            
+            for record in records:
+                values = []
+                for col_name, _, _ in columns:
+                    values.append(getattr(record, col_name, ""))
+                # Store target_id as hidden data using tags
+                tree.insert("", "end", values=values, tags=(str(record.target_id),))
+        
+        def search_in_popup():
+            search_term = search_entry.get().strip()
+            load_records(search_term)
+        
+        btn_search = tk.Button(
+            search_frame,
+            text="🔍 Search",
+            command=search_in_popup,
+            font=("Segoe UI", 10),
+            bg=INFO_COLOR,
+            fg="white",
+            activebackground="#138D75",
+            relief="flat",
+            cursor="hand2",
+            padx=10
+        )
+        btn_search.pack(side="left", padx=5)
+        
+        search_entry.bind("<Return>", lambda e: search_in_popup())
+        
+        def on_select_popup(event):
+            selection = tree.selection()
+            if selection:
+                item = selection[0]
+                # Get target_id from tags
+                tags = tree.item(item, 'tags')
+                if tags:
+                    target_id = tags[0]
+                    
+                    record = self.db.get_target_by_id(target_id)
+                    
+                    if record:
+                        self.current_record_key = str(target_id)
+                        self._populate_form(record)
+                        self.status_label.config(
+                            text=f"✓ Registro cargado",
+                            fg=SUCCESS_COLOR
+                        )
+                        list_window.destroy()
+        
+        # Bind both double-click and Enter key
+        tree.bind('<Double-Button-1>', on_select_popup)
+        tree.bind('<Return>', on_select_popup)
+        
+        # Load all records initially
+        load_records()
+        
+        # Button frame
+        button_frame = tk.Frame(list_window, bg=WINDOW_BG_COLOR)
+        button_frame.pack(fill="x", padx=10, pady=10)
+        
+        btn_close = tk.Button(
+            button_frame,
+            text="Cerrar",
+            command=list_window.destroy,
+            font=("Segoe UI", 10),
+            bg=SECONDARY_COLOR,
+            fg="white",
+            activebackground=ACCENT_COLOR,
+            relief="flat",
+            cursor="hand2",
+            padx=20,
+            pady=8
+        )
+        btn_close.pack(side="right")
+        
+        search_entry.focus()
     
     def _create_form(self, parent):
         """Override to add custom validation buttons"""
@@ -151,6 +314,9 @@ class CreateTargetsView(BaseCRUDView):
             'targ_pronumber': self.entry_prod
         }
         
+        # Hidden field to store target_id for updates
+        self.target_id_var = tk.StringVar()
+        
         # Create remaining fields starting from row 2
         field_defs = self.get_field_definitions()[2:]  # Skip chapter and pronumber
         for i, field_def in enumerate(field_defs, start=2):
@@ -165,13 +331,9 @@ class CreateTargetsView(BaseCRUDView):
             if field_type == 'numeric':
                 from src.components.ui_components import UIComponents
                 entry = UIComponents.create_numeric_entry(fields_frame, i, width=width, maxlength=maxlength, decimals=2)
-                # Make description and unit readonly
-                if name in ['targ_prodescription', 'targ_prounit']:
-                    entry.config(state='readonly', readonlybackground='#F0F0F0')
             else:
                 entry = self._create_entry_simple(fields_frame, i, width=width, maxlength=maxlength)
-                if name in ['targ_prodescription', 'targ_prounit']:
-                    entry.config(state='readonly', readonlybackground='#F0F0F0')
+                # Description and unit are editable (will be filled automatically if product exists)
             
             self.form_builder.entries[name] = entry
         
@@ -198,7 +360,7 @@ class CreateTargetsView(BaseCRUDView):
         return entry
     
     def _validate_chapter(self):
-        """Validate chapter against Chapters DB"""
+        """Validate chapter against Chapters DB (optional)"""
         chap_number = self.entry_chap.get().strip()
         if not chap_number:
             return
@@ -210,24 +372,17 @@ class CreateTargetsView(BaseCRUDView):
             if chapter:
                 self.current_chapter = chapter
                 self.lbl_chap_desc.config(text=f"✓ {chapter.chap_description}", fg=SUCCESS_COLOR)
-                self.entry_prod.focus()
             else:
                 self.current_chapter = None
-                self.lbl_chap_desc.config(text="", fg=DANGER_COLOR)
-                messagebox.showerror("Chapter No Existe", f"El Chapter '{chap_number}' no existe.\nPor favor ingrese un número válido.")
-                self.entry_chap.focus()
-                self.entry_chap.select_range(0, tk.END)
+                self.lbl_chap_desc.config(text="⚠ Chapter no encontrado (se guardará de todos modos)", fg=WARNING_COLOR)
+            
+            self.entry_prod.focus()
         except ValueError:
-            messagebox.showerror("Error", "El Chapter Number debe ser un número válido")
-            self.entry_chap.focus()
+            self.lbl_chap_desc.config(text="⚠ Formato inválido", fg=WARNING_COLOR)
+            self.entry_prod.focus()
     
     def _validate_product(self):
-        """Validate product against Products DB"""
-        if not self.current_chapter:
-            messagebox.showwarning("Advertencia", "Primero valide un Chapter Number")
-            self.entry_chap.focus()
-            return
-        
+        """Validate product against Products DB (optional - autocomplete if exists)"""
         pro_number = self.entry_prod.get().strip()
         if not pro_number:
             return
@@ -238,16 +393,12 @@ class CreateTargetsView(BaseCRUDView):
             self.current_product = product
             self.lbl_prod_desc.config(text=f"✓ {product.pro_description} ({product.pro_unit})", fg=SUCCESS_COLOR)
             
-            # Fill description, unit and price
-            self.form_builder.entries['targ_prodescription'].config(state='normal')
+            # Fill description, unit and price (campos editables)
             self.form_builder.entries['targ_prodescription'].delete(0, tk.END)
             self.form_builder.entries['targ_prodescription'].insert(0, product.pro_description)
-            self.form_builder.entries['targ_prodescription'].config(state='readonly')
             
-            self.form_builder.entries['targ_prounit'].config(state='normal')
             self.form_builder.entries['targ_prounit'].delete(0, tk.END)
             self.form_builder.entries['targ_prounit'].insert(0, product.pro_unit)
-            self.form_builder.entries['targ_prounit'].config(state='readonly')
             
             # Fill price from product
             self.form_builder.entries['targ_proprice1'].delete(0, tk.END)
@@ -256,19 +407,55 @@ class CreateTargetsView(BaseCRUDView):
                 self.form_builder.entries['targ_proprice1'].insert(0, formatted_price)
         else:
             self.current_product = None
-            self.lbl_prod_desc.config(text="", fg=DANGER_COLOR)
-            messagebox.showerror("Producto No Existe", f"El producto '{pro_number}' no existe.\nPor favor ingrese un número válido.")
-            self.entry_prod.focus()
-            self.entry_prod.select_range(0, tk.END)
+            self.lbl_prod_desc.config(text="⚠ Producto no encontrado (puede ingresar descripción manualmente)", fg=WARNING_COLOR)
     
-    def _save_record(self):
-        """Override to validate chapter first"""
-        if not self.current_chapter:
-            messagebox.showerror("Error", "Debe validar un Chapter Number primero")
-            self.entry_chap.focus()
+    def _populate_form(self, record):
+        """Override to populate form including target_id"""
+        # Store target_id for updates
+        if hasattr(record, 'target_id') and record.target_id:
+            self.target_id_var.set(str(record.target_id))
+        
+        # Call parent populate
+        super()._populate_form(record)
+        
+        # Update validation labels if chapter/product exist
+        if record.targ_prochapter:
+            chapter = self.chapter_db.get_chapter_by_number(int(record.targ_prochapter))
+            if chapter:
+                self.lbl_chap_desc.config(text=f"✓ {chapter.chap_description}", fg=SUCCESS_COLOR)
+        
+        if record.targ_pronumber:
+            product = self.product_db.get_product_by_part(record.targ_pronumber)
+            if product:
+                self.lbl_prod_desc.config(text=f"✓ {product.pro_description} ({product.pro_unit})", fg=SUCCESS_COLOR)
+    
+    def _update_record(self):
+        """Override to include target_id in update"""
+        if not self.current_record_key:
+            messagebox.showwarning("Advertencia", "Seleccione un registro de la lista primero")
             return
         
-        # Product validation is optional - user can enter any product number
+        values = self.form_builder.get_values()
+        
+        # Include target_id from stored value
+        target_id = self.target_id_var.get()
+        if target_id:
+            values['target_id'] = int(target_id)
+        
+        try:
+            model_class = self.get_model_class()
+            model = model_class(**values)
+            
+            if self.update_record(model):
+                messagebox.showinfo("Éxito", "Registro actualizado correctamente")
+                self._clear_form()
+            else:
+                messagebox.showerror("Error", "No se pudo actualizar el registro")
+        except Exception as e:
+            messagebox.showerror("Error", f"Error al actualizar: {str(e)}")
+    
+    def _save_record(self):
+        """Override to reset validation state after save"""
         # Call parent save (which will call _clear_form if successful)
         super()._save_record()
         
@@ -281,26 +468,15 @@ class CreateTargetsView(BaseCRUDView):
             self.lbl_prod_desc.config(text="")
     
     def _clear_form(self):
-        """Override to reset validation labels and readonly fields"""
+        """Override to reset validation labels and target_id"""
         self.current_chapter = None
         self.current_product = None
         self.lbl_chap_desc.config(text="")
         self.lbl_prod_desc.config(text="")
-        
-        # Temporarily enable readonly fields to clear them
-        if 'targ_prodescription' in self.form_builder.entries:
-            self.form_builder.entries['targ_prodescription'].config(state='normal')
-        if 'targ_prounit' in self.form_builder.entries:
-            self.form_builder.entries['targ_prounit'].config(state='normal')
+        self.target_id_var.set("")  # Clear target_id
         
         # Clear all fields
         super()._clear_form()
-        
-        # Set readonly fields back to readonly
-        if 'targ_prodescription' in self.form_builder.entries:
-            self.form_builder.entries['targ_prodescription'].config(state='readonly')
-        if 'targ_prounit' in self.form_builder.entries:
-            self.form_builder.entries['targ_prounit'].config(state='readonly')
     
     def render(self):
         """Override to use Project submenu back button"""

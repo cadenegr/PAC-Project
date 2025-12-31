@@ -63,7 +63,7 @@ class TeamsWorkFormView(BaseView):
         # Form title
         form_title = tk.Label(
             form_card,
-            text="Información del Equipo",
+            text="Team Information",
             font=FONTS["subtitle"],
             bg=COLORS["card_bg"],
             fg=COLORS["text_dark"]
@@ -71,13 +71,13 @@ class TeamsWorkFormView(BaseView):
         form_title.grid(row=0, column=0, columnspan=2, sticky="w", padx=15, pady=(15, 10))
         
         # Team Number
-        tk.Label(form_card, text="Número de Equipo *", font=FONTS["text"], 
+        tk.Label(form_card, text="Team Number *", font=FONTS["text"], 
                 bg=COLORS["card_bg"], fg=COLORS["text_dark"]).grid(row=1, column=0, sticky="w", padx=10, pady=8)
         self.entries["team_number"] = tk.Entry(form_card, font=FONTS["text"], relief="solid", borderwidth=1)
         self.entries["team_number"].grid(row=1, column=1, sticky="ew", padx=10, pady=8)
         
         # Team Name
-        tk.Label(form_card, text="Nombre del Equipo *", font=FONTS["text"], 
+        tk.Label(form_card, text="Team Name *", font=FONTS["text"], 
                 bg=COLORS["card_bg"], fg=COLORS["text_dark"]).grid(row=2, column=0, sticky="w", padx=10, pady=8)
         self.entries["team_name"] = tk.Entry(form_card, font=FONTS["text"], relief="solid", borderwidth=1)
         self.entries["team_name"].grid(row=2, column=1, sticky="ew", padx=10, pady=8)
@@ -88,20 +88,26 @@ class TeamsWorkFormView(BaseView):
         # Contact section header
         tk.Label(
             form_card,
-            text="Información de Contacto",
+            text="Contact Information",
             font=FONTS["subtitle"],
             bg=COLORS["card_bg"],
             fg=COLORS["text_dark"]
         ).grid(row=4, column=0, columnspan=2, sticky="w", padx=15, pady=(10, 10))
         
+        # Address
+        tk.Label(form_card, text="Address", font=FONTS["text"], 
+                bg=COLORS["card_bg"], fg=COLORS["text_dark"]).grid(row=9, column=0, sticky="w", padx=10, pady=8)
+        self.entries["address"] = tk.Entry(form_card, font=FONTS["text"], relief="solid", borderwidth=1)
+        self.entries["address"].grid(row=9, column=1, sticky="ew", padx=10, pady=8)
+        
         # Phone 1
-        tk.Label(form_card, text="Teléfono 1 *", font=FONTS["text"], 
+        tk.Label(form_card, text="Phone 1 *", font=FONTS["text"], 
                 bg=COLORS["card_bg"], fg=COLORS["text_dark"]).grid(row=5, column=0, sticky="w", padx=10, pady=8)
         self.entries["phone_1"] = tk.Entry(form_card, font=FONTS["text"], relief="solid", borderwidth=1)
         self.entries["phone_1"].grid(row=5, column=1, sticky="ew", padx=10, pady=8)
         
         # Phone 2
-        tk.Label(form_card, text="Teléfono 2", font=FONTS["text"], 
+        tk.Label(form_card, text="Phone 2", font=FONTS["text"], 
                 bg=COLORS["card_bg"], fg=COLORS["text_dark"]).grid(row=6, column=0, sticky="w", padx=10, pady=8)
         self.entries["phone_2"] = tk.Entry(form_card, font=FONTS["text"], relief="solid", borderwidth=1)
         self.entries["phone_2"].grid(row=6, column=1, sticky="ew", padx=10, pady=8)
@@ -119,35 +125,31 @@ class TeamsWorkFormView(BaseView):
         self.entries["whatsapp"].grid(row=8, column=1, sticky="ew", padx=10, pady=8)
         
         # Separator
-        tk.Frame(form_card, height=1, bg=COLORS["input_border"]).grid(row=9, column=0, columnspan=2, sticky="ew", padx=15, pady=15)
+        tk.Frame(form_card, height=1, bg=COLORS["input_border"]).grid(row=10, column=0, columnspan=2, sticky="ew", padx=15, pady=15)
         
         # Additional info section header
         tk.Label(
             form_card,
-            text="Información Adicional",
+            text="Bank Information",
             font=FONTS["subtitle"],
             bg=COLORS["card_bg"],
             fg=COLORS["text_dark"]
-        ).grid(row=10, column=0, columnspan=2, sticky="w", padx=15, pady=(10, 10))
-        
-        # Address
-        tk.Label(form_card, text="Dirección", font=FONTS["text"], 
-                bg=COLORS["card_bg"], fg=COLORS["text_dark"]).grid(row=11, column=0, sticky="w", padx=10, pady=8)
-        self.entries["address"] = tk.Entry(form_card, font=FONTS["text"], relief="solid", borderwidth=1)
-        self.entries["address"].grid(row=11, column=1, sticky="ew", padx=10, pady=8)
+        ).grid(row=11, column=0, columnspan=2, sticky="w", padx=15, pady=(10, 10))
         
         # Payment method dropdown
-        tk.Label(form_card, text="Método de Pago *", font=FONTS["text"], 
+        tk.Label(form_card, text="Payment Method *", font=FONTS["text"], 
                 bg=COLORS["card_bg"], fg=COLORS["text_dark"]).grid(row=12, column=0, sticky="w", padx=10, pady=8)
-        payment_methods = ["Efectivo", "Transferencia", "Cheque", "Depósito", "Otro"]
-        self.entries["pay_method"] = tk.StringVar(value=payment_methods[0])
-        payment_dropdown = tk.OptionMenu(form_card, self.entries["pay_method"], *payment_methods)
-        payment_dropdown.configure(font=FONTS["text"], bg=COLORS["input_bg"], fg=COLORS["text_dark"], 
-                                  relief="solid", borderwidth=1, highlightthickness=0, width=27)
-        payment_dropdown.grid(row=12, column=1, sticky="ew", padx=10, pady=8)
+        self.entries["payment_method"] = tk.Entry(form_card, font=FONTS["text"], relief="solid", borderwidth=1)
+        self.entries["payment_method"].grid(row=12, column=1, sticky="ew", padx=10, pady=8)
+        # payment_methods = ["Efectivo", "Transferencia", "Cheque", "Depósito", "Otro"]
+        # self.entries["pay_method"] = tk.StringVar(value=payment_methods[0])
+        # payment_dropdown = tk.OptionMenu(form_card, self.entries["pay_method"], *payment_methods)
+        # payment_dropdown.configure(font=FONTS["text"], bg=COLORS["input_bg"], fg=COLORS["text_dark"], 
+        #                           relief="solid", borderwidth=1, highlightthickness=0, width=27)
+        # payment_dropdown.grid(row=12, column=1, sticky="ew", padx=10, pady=8)
         
         # Username
-        tk.Label(form_card, text="Usuario", font=FONTS["text"], 
+        tk.Label(form_card, text="Username", font=FONTS["text"], 
                 bg=COLORS["card_bg"], fg=COLORS["text_dark"]).grid(row=13, column=0, sticky="w", padx=10, pady=8)
         self.entries["username"] = tk.Entry(form_card, font=FONTS["text"], relief="solid", borderwidth=1)
         self.entries["username"].grid(row=13, column=1, sticky="ew", padx=10, pady=8)
@@ -155,7 +157,7 @@ class TeamsWorkFormView(BaseView):
         # Required fields note
         tk.Label(
             form_card,
-            text="* Campos obligatorios",
+            text="* Fields required",
             font=("Segoe UI", 8, "italic"),
             bg=COLORS["card_bg"],
             fg=COLORS["text_light"]
@@ -170,16 +172,16 @@ class TeamsWorkFormView(BaseView):
         buttons_frame.pack(fill="x", padx=10, pady=10)
         
         # Save button
-        save_text = "💾 Guardar" if self.mode == "new" else "✏️ Actualizar"
+        save_text = "💾 Save" if self.mode == "new" else "✏️ Update"
         btn_save = tk.Button(buttons_frame, text=save_text, command=self._save_team, **BUTTON_STYLES["save"])
         btn_save.pack(side="left", padx=5)
         
         # Cancel button
-        btn_cancel = tk.Button(buttons_frame, text="❌ Cancelar", command=self._go_back, **BUTTON_STYLES["cancel"])
+        btn_cancel = tk.Button(buttons_frame, text="❌ Cancel", command=self._go_back, **BUTTON_STYLES["cancel"])
         btn_cancel.pack(side="left", padx=5)
         
         # Back button
-        btn_back = tk.Button(buttons_frame, text="← Volver", command=self._go_back, **BUTTON_STYLES["back"])
+        btn_back = tk.Button(buttons_frame, text="← Back", command=self._go_back, **BUTTON_STYLES["back"])
         btn_back.pack(side="right", padx=5)
     
     def _load_team_data(self):
@@ -237,8 +239,8 @@ class TeamsWorkFormView(BaseView):
             "phone_1": self.entries["phone_1"].get().strip(),
             "phone_2": self.entries["phone_2"].get().strip(),
             "email": self.entries["email"].get().strip(),
-            "whatsapp": self.entries["whatsapp"].get().strip(),
             "address": self.entries["address"].get().strip(),
+            "whatsapp": self.entries["whatsapp"].get().strip(),
             "pay_method": self.entries["pay_method"].get(),
             "username": self.entries["username"].get().strip()
         }
