@@ -29,7 +29,7 @@ class Target:
     
     def __post_init__(self):
         """Truncate alphanumeric fields to max length"""
-        self.targ_prochapter = str(self.targ_prochapter)[:3] if self.targ_prochapter else ""
+        self.targ_prochapter = str(self.targ_prochapter)[:4] if self.targ_prochapter else ""
         self.targ_pronumber = str(self.targ_pronumber)[:12] if self.targ_pronumber else ""
         self.targ_prodescription = str(self.targ_prodescription)[:30] if self.targ_prodescription else ""
         self.targ_prounit = str(self.targ_prounit)[:4] if self.targ_prounit else ""

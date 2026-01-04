@@ -115,7 +115,7 @@ class OrdersItemView(BaseView):
         # View button
         btn_view = tk.Button(
             buttons_frame,
-            text="View",
+            text=" View",
             command=lambda: self.app_controller.show_work_order_view(),
             font=FONTS["button"],
             bg=SUCCESS_COLOR,

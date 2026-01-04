@@ -113,6 +113,10 @@ class AppController:
             from src.views.create_targets_view import CreateTargetsView
             self.current_view = CreateTargetsView(self.container, self)
             self.current_view.render()
+        elif item_id == "new_period":
+            from src.views.new_period_view import NewPeriodView
+            self.current_view = NewPeriodView(self.container, self)
+            self.current_view.render()
         elif item_id == "view":
             # View has a submenu
             self.show_view_submenu()
@@ -141,6 +145,17 @@ class AppController:
         """Navigate to a specific orders item"""
         self.current_view = OrdersItemView(self.container, self, item_id)
         self.current_view.render()
+    
+    def show_work_order_form(self, mode):
+        """Display the Work Order form"""
+        from src.views.work_order_form_view import WorkOrderFormView
+        self.current_view = WorkOrderFormView(self.container, self, mode)
+        self.current_view.render()
+    
+    def show_work_order_view(self):
+        """Display the Work Order view"""
+        # TODO: Implement work order view
+        pass
     
     # Payments methods
     def show_payments_submenu(self):

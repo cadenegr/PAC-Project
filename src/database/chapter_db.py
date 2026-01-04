@@ -1,6 +1,5 @@
 """
 Chapter Database Service
-CRUD operations for chapters
 """
 
 import sqlite3
@@ -8,7 +7,7 @@ from typing import List, Optional
 from src.models.chapter import Chapter
 
 
-class ChapterDatabase:
+class ChapterDB:
     """Database service for Chapter operations"""
     
     def __init__(self, db_path: str = 'data/pac.db'):
@@ -20,51 +19,49 @@ class ChapterDatabase:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         
-        cursor.execute('''
+        cursor.execute("""
             CREATE TABLE IF NOT EXISTS chapters (
-                chapter_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                chap_number INTEGER NOT NULL UNIQUE,
-                chap_description TEXT DEFAULT '',
+                chap_number TEXT(4) PRIMARY KEY,
+                chap_description TEXT NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
-        ''')
+        """)
         
         conn.commit()
         conn.close()
     
-    def create_chapter(self, chapter: Chapter) -> Optional[int]:
-        """
-        Create new chapter
-        Returns: chapter_id if successful, None if duplicate
-        """
-        try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
-            
-            cursor.execute('''
-                INSERT INTO chapters (chap_number, chap_description)
-                VALUES (?, ?)
-            ''', (chapter.chap_number, chapter.chap_description))
-            
-            chapter_id = cursor.lastrowid
-            conn.commit()
-            conn.close()
-            return chapter_id
-            
-        except sqlite3.IntegrityError:
-            return None
-    
-    def get_chapter_by_number(self, chap_number: int) -> Optional[Chapter]:
-        """Get chapter by number (primary key)"""
+    def get_all(self) -> List[Chapter]:
+        """Get all chapters"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         
-        cursor.execute('''
-            SELECT chap_number, chap_description
+        cursor.execute("""
+            SELECT chap_number, chap_description, created_at, updated_at
+            FROM chapters
+            ORDER BY chap_number
+        """)
+        
+        rows = cursor.fetchall()
+        conn.close()
+        
+        return [Chapter(
+            chap_number=row[0],
+            chap_description=row[1],
+            created_at=row[2],
+            updated_at=row[3]
+        ) for row in rows]
+    
+    def get_by_number(self, chap_number: str) -> Optional[Chapter]:
+        """Get chapter by number"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT chap_number, chap_description, created_at, updated_at
             FROM chapters
             WHERE chap_number = ?
-        ''', (chap_number,))
+        """, (chap_number,))
         
         row = cursor.fetchone()
         conn.close()
@@ -72,88 +69,82 @@ class ChapterDatabase:
         if row:
             return Chapter(
                 chap_number=row[0],
-                chap_description=row[1]
+                chap_description=row[1],
+                created_at=row[2],
+                updated_at=row[3]
             )
         return None
     
-    def search_by_description(self, description: str) -> List[Chapter]:
-        """Search chapters by description (partial match)"""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        
-        cursor.execute('''
-            SELECT chap_number, chap_description
-            FROM chapters
-            WHERE chap_description LIKE ?
-            ORDER BY chap_number
-        ''', (f'%{description}%',))
-        
-        rows = cursor.fetchall()
-        conn.close()
-        
-        chapters = []
-        for row in rows:
-            chapters.append(Chapter(
-                chap_number=row[0],
-                chap_description=row[1]
-            ))
-        return chapters
+    def create(self, chapter: Chapter) -> bool:
+        """Create a new chapter"""
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            
+            cursor.execute("""
+                INSERT INTO chapters (chap_number, chap_description)
+                VALUES (?, ?)
+            """, (chapter.chap_number, chapter.chap_description))
+            
+            conn.commit()
+            conn.close()
+            return True
+        except sqlite3.IntegrityError:
+            return False
     
-    def get_all_chapters(self) -> List[Chapter]:
-        """Get all chapters ordered by number"""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        
-        cursor.execute('''
-            SELECT chap_number, chap_description
-            FROM chapters
-            ORDER BY chap_number
-        ''')
-        
-        rows = cursor.fetchall()
-        conn.close()
-        
-        chapters = []
-        for row in rows:
-            chapters.append(Chapter(
-                chap_number=row[0],
-                chap_description=row[1]
-            ))
-        return chapters
-    
-    def update_chapter(self, chapter: Chapter) -> bool:
+    def update(self, chapter: Chapter) -> bool:
         """Update existing chapter"""
         try:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
             
-            cursor.execute('''
+            cursor.execute("""
                 UPDATE chapters
                 SET chap_description = ?,
                     updated_at = CURRENT_TIMESTAMP
                 WHERE chap_number = ?
-            ''', (chapter.chap_description, chapter.chap_number))
+            """, (chapter.chap_description, chapter.chap_number))
             
             success = cursor.rowcount > 0
             conn.commit()
             conn.close()
             return success
-            
-        except Exception:
+        except sqlite3.Error:
             return False
     
-    def delete_chapter(self, chap_number: int) -> bool:
+    def delete(self, chap_number: str) -> bool:
         """Delete chapter by number"""
         try:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
             
-            cursor.execute('DELETE FROM chapters WHERE chap_number = ?', (chap_number,))
+            cursor.execute("DELETE FROM chapters WHERE chap_number = ?", (chap_number,))
             
             success = cursor.rowcount > 0
             conn.commit()
             conn.close()
             return success
-            
-        except Exception:
+        except sqlite3.Error:
             return False
+    
+    def search(self, search_term: str) -> List[Chapter]:
+        """Search chapters by number or description"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT chap_number, chap_description, created_at, updated_at
+            FROM chapters
+            WHERE chap_number LIKE ? OR chap_description LIKE ?
+            ORDER BY chap_number
+        """, (f"%{search_term}%", f"%{search_term}%"))
+        
+        rows = cursor.fetchall()
+        conn.close()
+        
+        return [Chapter(
+            chap_number=row[0],
+            chap_description=row[1],
+            created_at=row[2],
+            updated_at=row[3]
+        ) for row in rows]

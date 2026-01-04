@@ -7,7 +7,7 @@ import tkinter as tk
 from tkinter import messagebox
 from src.views.base_crud_view import BaseCRUDView
 from src.database.target_db import TargetDatabase
-from src.database.chapter_db import ChapterDatabase
+from src.database.chapter_db import ChapterDB
 from src.database.product_db import ProductDatabase
 from src.models.target import Target
 from config.settings import *
@@ -17,7 +17,7 @@ class CreateTargetsView(BaseCRUDView):
     """Create Targets view with cross-database validation"""
     
     def __init__(self, container, app_controller):
-        self.chapter_db = ChapterDatabase()
+        self.chapter_db = ChapterDB()
         self.product_db = ProductDatabase()
         self.current_chapter = None
         self.current_product = None
@@ -29,7 +29,7 @@ class CreateTargetsView(BaseCRUDView):
     
     def get_field_definitions(self):
         return [
-            {'name': 'targ_prochapter', 'label': 'Chapter Number *:', 'type': 'text', 'width': 5, 'maxlength': 3},
+            {'name': 'targ_prochapter', 'label': 'Chapter Number *:', 'type': 'text', 'width': 5, 'maxlength': 4},
             {'name': 'targ_pronumber', 'label': 'Product Number *:', 'type': 'primary', 'width': 12, 'maxlength': 12},
             {'name': 'targ_prodescription', 'label': 'Description:', 'type': 'text', 'width': 30, 'maxlength': 30},
             {'name': 'targ_prounit', 'label': 'Unit:', 'type': 'text', 'width': 4, 'maxlength': 4},
@@ -171,7 +171,11 @@ class CreateTargetsView(BaseCRUDView):
             for record in records:
                 values = []
                 for col_name, _, _ in columns:
-                    values.append(getattr(record, col_name, ""))
+                    value = getattr(record, col_name, "")
+                    # Normalize chapter number to 4 characters for display
+                    if col_name == 'targ_prochapter' and value:
+                        value = str(value).zfill(4) if str(value).isdigit() else str(value)
+                    values.append(value)
                 # Store target_id as hidden data using tags
                 tree.insert("", "end", values=values, tags=(str(record.target_id),))
         
@@ -275,13 +279,14 @@ class CreateTargetsView(BaseCRUDView):
         
         self.entry_chap = tk.Entry(chap_frame, font=("Segoe UI", 10), relief="solid", borderwidth=1, width=5)
         self.entry_chap.pack(side="left", padx=(0, 5))
-        vcmd = (self.entry_chap.register(lambda text: len(text) <= 3 and (text.isdigit() or text == "")), '%P')
+        vcmd = (self.entry_chap.register(lambda text: len(text) <= 4), '%P')
         self.entry_chap.config(validate="key", validatecommand=vcmd)
+        self.entry_chap.bind("<FocusOut>", lambda e: self._validate_chapter())
         
-        btn_val_chap = tk.Button(chap_frame, text="✓", command=self._validate_chapter,
-                                  font=("Segoe UI", 10), bg=SUCCESS_COLOR, fg="white",
-                                  relief="flat", cursor="hand2", width=3)
-        btn_val_chap.pack(side="left")
+        btn_search_chap = tk.Button(chap_frame, text="Search", command=self._open_chapter_search,
+                                     font=("Segoe UI", 9), bg=INFO_COLOR, fg="white",
+                                     relief="flat", cursor="hand2", padx=10, pady=5)
+        btn_search_chap.pack(side="left")
         
         self.lbl_chap_desc = tk.Label(fields_frame, text="", font=("Segoe UI", 9), bg=FRAME_BG_COLOR, fg=INFO_COLOR, anchor="w")
         self.lbl_chap_desc.grid(row=0, column=2, pady=8, sticky="w", padx=5)
@@ -295,11 +300,12 @@ class CreateTargetsView(BaseCRUDView):
         self.entry_prod.pack(side="left", padx=(0, 5))
         vcmd2 = (self.entry_prod.register(lambda text: len(text) <= 12), '%P')
         self.entry_prod.config(validate="key", validatecommand=vcmd2)
+        self.entry_prod.bind("<FocusOut>", lambda e: self._validate_product())
         
-        btn_val_prod = tk.Button(prod_frame, text="✓", command=self._validate_product,
-                                  font=("Segoe UI", 10), bg=SUCCESS_COLOR, fg="white",
-                                  relief="flat", cursor="hand2", width=3)
-        btn_val_prod.pack(side="left")
+        btn_search_prod = tk.Button(prod_frame, text="Search", command=self._open_product_search,
+                                     font=("Segoe UI", 9), bg=INFO_COLOR, fg="white",
+                                     relief="flat", cursor="hand2", padx=10, pady=5)
+        btn_search_prod.pack(side="left")
         
         self.lbl_prod_desc = tk.Label(fields_frame, text="", font=("Segoe UI", 9), bg=FRAME_BG_COLOR, fg=INFO_COLOR, anchor="w")
         self.lbl_prod_desc.grid(row=1, column=2, pady=8, sticky="w", padx=5)
@@ -363,11 +369,23 @@ class CreateTargetsView(BaseCRUDView):
         """Validate chapter against Chapters DB (optional)"""
         chap_number = self.entry_chap.get().strip()
         if not chap_number:
+            self.lbl_chap_desc.config(text="", fg=INFO_COLOR)
+            return
+        
+        # Normalize to 4 characters if numeric
+        if chap_number.isdigit():
+            chap_number = chap_number.zfill(4)
+            self.entry_chap.delete(0, tk.END)
+            self.entry_chap.insert(0, chap_number)
+        
+        # Don't allow 0000 as a valid chapter
+        if chap_number == "0000":
+            self.current_chapter = None
+            self.lbl_chap_desc.config(text="✗ Chapter 0000 no es válido", fg=DANGER_COLOR)
             return
         
         try:
-            chap_num = int(chap_number)
-            chapter = self.chapter_db.get_chapter_by_number(chap_num)
+            chapter = self.chapter_db.get_by_number(chap_number)
             
             if chapter:
                 self.current_chapter = chapter
@@ -420,7 +438,9 @@ class CreateTargetsView(BaseCRUDView):
         
         # Update validation labels if chapter/product exist
         if record.targ_prochapter:
-            chapter = self.chapter_db.get_chapter_by_number(int(record.targ_prochapter))
+            # Normalize chapter number to 4 characters for lookup
+            chapter_num = str(record.targ_prochapter).zfill(4) if str(record.targ_prochapter).isdigit() else str(record.targ_prochapter)
+            chapter = self.chapter_db.get_by_number(chapter_num)
             if chapter:
                 self.lbl_chap_desc.config(text=f"✓ {chapter.chap_description}", fg=SUCCESS_COLOR)
         
@@ -455,7 +475,14 @@ class CreateTargetsView(BaseCRUDView):
             messagebox.showerror("Error", f"Error al actualizar: {str(e)}")
     
     def _save_record(self):
-        """Override to reset validation state after save"""
+        """Override to add chapter validation before save"""
+        # Validate chapter number
+        chap_number = self.entry_chap.get().strip()
+        if not chap_number or chap_number == "0000":
+            messagebox.showerror("Validación", "Debe ingresar un Chapter Number válido (no puede ser 0000 o vacío)")
+            self.entry_chap.focus()
+            return
+        
         # Call parent save (which will call _clear_form if successful)
         super()._save_record()
         
@@ -502,3 +529,240 @@ class CreateTargetsView(BaseCRUDView):
                             font=("Segoe UI", 10), bg=SECONDARY_COLOR, fg="white",
                             activebackground=ACCENT_COLOR, relief="flat", cursor="hand2", padx=20, pady=10)
         btn_back.pack(side="left")
+    
+    def _open_chapter_search(self):
+        """Open chapter search popup window"""
+        from tkinter import ttk
+        
+        # Create popup window
+        popup = tk.Toplevel(self.container)
+        popup.title("Select Chapter")
+        popup.geometry("700x500")
+        popup.configure(bg=WINDOW_BG_COLOR)
+        popup.transient(self.container)
+        popup.grab_set()
+        
+        # Header
+        header_frame = tk.Frame(popup, bg=ACCENT_COLOR)
+        header_frame.pack(fill="x")
+        
+        header_label = tk.Label(
+            header_frame,
+            text="Select Chapter",
+            font=FONTS["header"],
+            bg=ACCENT_COLOR,
+            fg="white",
+            pady=15
+        )
+        header_label.pack()
+        
+        # Content frame
+        content_frame = tk.Frame(popup, bg=FRAME_BG_COLOR, relief="ridge", borderwidth=2)
+        content_frame.pack(fill="both", expand=True, padx=20, pady=20)
+        
+        # Get all chapters
+        all_chapters = self.chapter_db.get_all()
+        
+        if not all_chapters:
+            messagebox.showinfo("No Data", "No chapters found in database")
+            popup.destroy()
+            return
+        
+        # Create treeview
+        tree_frame = tk.Frame(content_frame, bg=FRAME_BG_COLOR)
+        tree_frame.pack(fill="both", expand=True, padx=10, pady=10)
+        
+        tree_frame.grid_rowconfigure(0, weight=1)
+        tree_frame.grid_columnconfigure(0, weight=1)
+        
+        # Scrollbars
+        vsb = ttk.Scrollbar(tree_frame, orient="vertical")
+        hsb = ttk.Scrollbar(tree_frame, orient="horizontal")
+        
+        # Treeview
+        columns = ("Number", "Description")
+        tree = ttk.Treeview(
+            tree_frame,
+            columns=columns,
+            show="headings",
+            yscrollcommand=vsb.set,
+            xscrollcommand=hsb.set,
+            height=15,
+            selectmode="browse"
+        )
+        
+        vsb.config(command=tree.yview)
+        hsb.config(command=tree.xview)
+        
+        # Configure columns
+        tree.heading("Number", text="Chapter Number")
+        tree.heading("Description", text="Description")
+        
+        tree.column("Number", width=150, anchor="center")
+        tree.column("Description", width=450, anchor="w")
+        
+        tree.grid(row=0, column=0, sticky="nsew")
+        vsb.grid(row=0, column=1, sticky="ns")
+        hsb.grid(row=1, column=0, sticky="ew")
+        
+        # Populate tree
+        for chapter in all_chapters:
+            tree.insert("", "end", values=(
+                chapter.chap_number,
+                chapter.chap_description
+            ))
+        
+        # Double-click to select
+        def on_select(event):
+            selection = tree.selection()
+            if selection:
+                item = tree.item(selection[0])
+                chapter_number = item['values'][0]
+                self.entry_chap.delete(0, tk.END)
+                self.entry_chap.insert(0, chapter_number)
+                self._validate_chapter()
+                popup.destroy()
+        
+        tree.bind("<Double-Button-1>", on_select)
+        
+        # Buttons frame
+        buttons_frame = tk.Frame(content_frame, bg=FRAME_BG_COLOR)
+        buttons_frame.pack(pady=10)
+        
+        # Close button
+        btn_close = tk.Button(
+            buttons_frame,
+            text="Close",
+            command=popup.destroy,
+            font=FONTS["button"],
+            bg=SECONDARY_COLOR,
+            fg="white",
+            relief="flat",
+            cursor="hand2",
+            padx=30,
+            pady=12,
+            width=12
+        )
+        btn_close.pack(side="left", padx=10)
+    
+    def _open_product_search(self):
+        """Open product search popup window"""
+        from tkinter import ttk
+        
+        # Create popup window
+        popup = tk.Toplevel(self.container)
+        popup.title("Select Product")
+        popup.geometry("900x600")
+        popup.configure(bg=WINDOW_BG_COLOR)
+        popup.transient(self.container)
+        popup.grab_set()
+        
+        # Header
+        header_frame = tk.Frame(popup, bg=ACCENT_COLOR)
+        header_frame.pack(fill="x")
+        
+        header_label = tk.Label(
+            header_frame,
+            text="Select Product",
+            font=FONTS["header"],
+            bg=ACCENT_COLOR,
+            fg="white",
+            pady=15
+        )
+        header_label.pack()
+        
+        # Content frame
+        content_frame = tk.Frame(popup, bg=FRAME_BG_COLOR, relief="ridge", borderwidth=2)
+        content_frame.pack(fill="both", expand=True, padx=20, pady=20)
+        
+        # Get all products
+        all_products = self.product_db.get_all_products()
+        
+        if not all_products:
+            messagebox.showinfo("No Data", "No products found in database")
+            popup.destroy()
+            return
+        
+        # Create treeview
+        tree_frame = tk.Frame(content_frame, bg=FRAME_BG_COLOR)
+        tree_frame.pack(fill="both", expand=True, padx=10, pady=10)
+        
+        tree_frame.grid_rowconfigure(0, weight=1)
+        tree_frame.grid_columnconfigure(0, weight=1)
+        
+        # Scrollbars
+        vsb = ttk.Scrollbar(tree_frame, orient="vertical")
+        hsb = ttk.Scrollbar(tree_frame, orient="horizontal")
+        
+        # Treeview
+        columns = ("Part", "Description", "Unit", "Price")
+        tree = ttk.Treeview(
+            tree_frame,
+            columns=columns,
+            show="headings",
+            yscrollcommand=vsb.set,
+            xscrollcommand=hsb.set,
+            height=15,
+            selectmode="browse"
+        )
+        
+        vsb.config(command=tree.yview)
+        hsb.config(command=tree.xview)
+        
+        # Configure columns
+        tree.heading("Part", text="Part Number")
+        tree.heading("Description", text="Description")
+        tree.heading("Unit", text="Unit")
+        tree.heading("Price", text="Price")
+        
+        tree.column("Part", width=150, anchor="center")
+        tree.column("Description", width=400, anchor="w")
+        tree.column("Unit", width=100, anchor="center")
+        tree.column("Price", width=150, anchor="e")
+        
+        tree.grid(row=0, column=0, sticky="nsew")
+        vsb.grid(row=0, column=1, sticky="ns")
+        hsb.grid(row=1, column=0, sticky="ew")
+        
+        # Populate tree
+        for product in all_products:
+            price = f"${product.pro_price1:,.2f}" if product.pro_price1 else "$0.00"
+            tree.insert("", "end", values=(
+                product.pro_part,
+                product.pro_description or "",
+                product.pro_unit or "",
+                price
+            ))
+        
+        # Double-click to select
+        def on_select(event):
+            selection = tree.selection()
+            if selection:
+                item = tree.item(selection[0])
+                part_number = item['values'][0]
+                self.entry_prod.delete(0, tk.END)
+                self.entry_prod.insert(0, part_number)
+                self._validate_product()
+                popup.destroy()
+        
+        tree.bind("<Double-Button-1>", on_select)
+        
+        # Buttons frame
+        buttons_frame = tk.Frame(content_frame, bg=FRAME_BG_COLOR)
+        buttons_frame.pack(pady=10)
+        
+        # Close button
+        btn_close = tk.Button(
+            buttons_frame,
+            text="Close",
+            command=popup.destroy,
+            font=FONTS["button"],
+            bg=SECONDARY_COLOR,
+            fg="white",
+            relief="flat",
+            cursor="hand2",
+            padx=30,
+            pady=12,
+            width=12
+        )
+        btn_close.pack(side="left", padx=10)
