@@ -51,7 +51,7 @@ class ChaptersView(BaseView):
         form_frame.pack(pady=10, padx=40, fill="x")
         
         # Chapter Number field (read-only for auto-assignment)
-        self.chap_number_entry = self._create_field(form_frame, "Chapter Number:", self.chap_number_var, 0, width=6, state="readonly")
+        self.chap_number_entry = self._create_field(form_frame, "Unit Number:", self.chap_number_var, 0, width=6, state="readonly")
         
         # Chapter Description field
         self.chap_description_entry = self._create_field(form_frame, "Description:", self.chap_description_var, 1, width=50)
@@ -138,7 +138,7 @@ class ChaptersView(BaseView):
         hsb.config(command=self.tree.xview)
         
         # Configure columns
-        self.tree.heading("Number", text="Chapter Number")
+        self.tree.heading("Number", text="Unit Number")
         self.tree.heading("Description", text="Description")
         
         self.tree.column("Number", width=150, anchor="center")

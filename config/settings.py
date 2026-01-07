@@ -171,7 +171,7 @@ CATALOG_SUBMENU = [
     },
     {
         "id": "products",
-        "title": "Products",
+        "title": "Products / Services",
         "description": "Manage your product catalog.\n\n"
                       "Features:\n"
                       "• View all products\n"
@@ -220,7 +220,7 @@ PROJECT_SUBMENU = [
     },
     {
         "id": "chapters",
-        "title": "Chapters",
+        "title": "Units",
         "description": "Manage project chapters.\n\n"
                       "Features:\n"
                       "• Create chapters\n"

@@ -106,7 +106,7 @@ class WorkOrderFormView(BaseView):
         # Chapter field with lookup
         self.chapter_description_label = self._create_field_with_lookup(
             form_frame, 
-            "Chapter:", 
+            "Unit:", 
             self.wo_chapter_var, 
             4, 
             width=6,
@@ -124,7 +124,7 @@ class WorkOrderFormView(BaseView):
         )
         
         # Quantity field
-        self._create_field(form_frame, "Quantity:", self.wo_qty_var, 6, width=15)
+        self._create_field(form_frame, "Qty Order:", self.wo_qty_var, 6, width=15)
         
         # Price field
         self._create_field(form_frame, "Price:", self.wo_price_var, 7, width=15)
@@ -287,7 +287,7 @@ class WorkOrderFormView(BaseView):
                 pady=5
             )
             search_btn.pack(side="left", padx=5)
-        elif label_text == "Chapter:":
+        elif label_text == "Unit:":
             search_btn = tk.Button(
                 field_frame,
                 text="🔍 Search",
@@ -720,7 +720,7 @@ class WorkOrderFormView(BaseView):
         hsb = ttk.Scrollbar(tree_frame, orient="horizontal")
         
         # Treeview
-        columns = ("Number", "Description", "Unit", "Qty Project")
+        columns = ("Number", "Description", "Unit", "Qty to Finish", "Qty Order")
         tree = ttk.Treeview(
             tree_frame,
             columns=columns,
@@ -738,12 +738,14 @@ class WorkOrderFormView(BaseView):
         tree.heading("Number", text="Number")
         tree.heading("Description", text="Description")
         tree.heading("Unit", text="Unit")
-        tree.heading("Qty Project", text="Qty Project")
+        tree.heading("Qty to Finish", text="Qty to Finish")
+        tree.heading("Qty Order", text="Qty Order")
         
         tree.column("Number", width=100, anchor="center")
-        tree.column("Description", width=400, anchor="w")
-        tree.column("Unit", width=100, anchor="center")
-        tree.column("Qty Project", width=150, anchor="e")
+        tree.column("Description", width=300, anchor="w")
+        tree.column("Unit", width=80, anchor="center")
+        tree.column("Qty to Finish", width=120, anchor="e")
+        tree.column("Qty Order", width=120, anchor="e")
         
         tree.grid(row=0, column=0, sticky="nsew")
         vsb.grid(row=0, column=1, sticky="ns")
@@ -751,12 +753,19 @@ class WorkOrderFormView(BaseView):
         
         # Populate tree with filtered targets
         for target in filtered_targets:
-            qty = target.targ_qtyproject if target.targ_qtyproject else 0
+            # Calculate Qty to Finish: project - done - progress - finish
+            qty_project = target.targ_qtyproject if target.targ_qtyproject else 0
+            qty_done = target.targ_qtydone if target.targ_qtydone else 0
+            qty_progress = target.targ_qtyprogress if target.targ_qtyprogress else 0
+            qty_finish = target.targ_qtyfinish if target.targ_qtyfinish else 0
+            qty_to_finish = qty_project - qty_done - qty_progress - qty_finish
+            
             values = (
                 target.targ_pronumber or "",
                 target.targ_prodescription or "",
                 target.targ_prounit or "",
-                f"{qty:,.2f}"
+                f"{qty_to_finish:,.2f}",
+                f"{qty_finish:,.2f}"
             )
             tree.insert("", "end", values=values)
         
@@ -775,6 +784,38 @@ class WorkOrderFormView(BaseView):
         # Buttons frame
         buttons_frame = tk.Frame(content_frame, bg=FRAME_BG_COLOR)
         buttons_frame.pack(pady=10)
+        
+        # All button
+        btn_all = tk.Button(
+            buttons_frame,
+            text="All",
+            command=lambda: None,  # Placeholder for now
+            font=FONTS["button"],
+            bg=INFO_COLOR,
+            fg="white",
+            relief="flat",
+            cursor="hand2",
+            padx=30,
+            pady=12,
+            width=12
+        )
+        btn_all.pack(side="left", padx=10)
+        
+        # Save button
+        btn_save = tk.Button(
+            buttons_frame,
+            text="Save",
+            command=lambda: None,  # Placeholder for now
+            font=FONTS["button"],
+            bg=SUCCESS_COLOR,
+            fg="white",
+            relief="flat",
+            cursor="hand2",
+            padx=30,
+            pady=12,
+            width=12
+        )
+        btn_save.pack(side="left", padx=10)
         
         # Close button
         btn_close = tk.Button(
