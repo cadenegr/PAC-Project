@@ -1,4 +1,4 @@
-# PAC – Plan and control projects
+# PAC – Project Administration and Control
 
 **PAC** helps small businesses and volunteer groups plan a project step by step and keep track of its tasks, materials, people and money.
 
@@ -11,7 +11,7 @@ This repository holds the **first desktop prototype** (Python, Tkinter, SQLite).
 
 **Status:** early prototype, not for production use. The data model is in place, but some screens are still placeholders.
 
-**Next step:** the prototype showed that managers on site need a phone app that works offline, not a desktop program. PAC will be rebuilt as an offline-first web app (PWA) with shareable "project recipes" (reusable step-by-step templates), self-hostable sync and a shared record of hours and payments.
+**Next step:** the prototype showed that managers on site need a phone app that works offline, not a desktop program. PAC will be rebuilt as an offline-first web app (PWA) with shareable project templates (reusable step-by-step plans), self-hostable sync and a shared record of hours and payments.
 
 **Run it:** `python3 main.py` (needs Python 3 and Tkinter).
 
