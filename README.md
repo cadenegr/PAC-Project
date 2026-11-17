@@ -1,6 +1,59 @@
-# PAC - Menu Application
+# PAC – Plan and control projects
+
+**PAC** helps small businesses and volunteer groups plan a project step by step and keep track of its tasks, materials, people and money.
+
+This repository holds the **first desktop prototype** (Python, Tkinter, SQLite). It was built around a real case: a manager coordinating painters, materials and payments for a large apartment complex. It models:
+
+- **Catalog:** materials, products and services, unit prices, suppliers, work teams
+- **Project:** units (project chapters), targets (tasks with unit price and quantity), periods
+- **Progress reports:** quantity planned, done, in progress and still to finish
+- **Orders and payments:** work orders and purchase orders, and their payments (partly done)
+
+**Status:** early prototype, not for production use. The data model is in place, but some screens are still placeholders.
+
+**Next step:** the prototype showed that managers on site need a phone app that works offline, not a desktop program. PAC will be rebuilt as an offline-first web app (PWA) with shareable "project recipes" (reusable step-by-step templates), self-hostable sync and a shared record of hours and payments.
+
+**Run it:** `python3 main.py` (needs Python 3 and Tkinter).
+
+**License:** [GNU AGPL-3.0](LICENSE)
+
+---
+
+## Español – notas originales
+
+# PAC (Control y Administracion de Projectos)- Menu Application
 
 Aplicación profesional con menú interactivo desarrollada en Python siguiendo arquitectura MVC.
+Projectos - cual quier projecto de construcion.
+	  - administracion - balance de dinero atra ves de monitoreo.
+	  - planeacion - 
+	  - monitoreo de pasos.
+	  - el projecto de controlar es de llegar un fin.
+
+
+La Base.  - Monitoreando en tiempo real sobre el projecto.
+	  - Y EL CUIDADO DEL DINERO
+	  - MATERIAL
+	  - PERSONAL.
+
+PERMANENTE alimentacion de datos.
+manual o de otra manera.
+
+
+
+
+PAC - Menu
+
+
+*Directories:
+-conceptos: tareas (como pintar una pared)
+-precios unitarios (cuanto me cuesta hacer cada uno de esos conceptos)
+Projecto:
+- el projecto
+- define las estapas del projecto principal
+	- conceptos. 
+*
+	  
 
 ## 📁 Estructura del Proyecto
 
