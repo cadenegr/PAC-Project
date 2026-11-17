@@ -57,3 +57,8 @@ htmlcov/
 
 # Environment variables
 .env
+
+# Private notes and AI assistant notes (kept local)
+AI_Summary.md
+tempNotes
+CLAUDE.md

@@ -175,32 +175,3 @@ sudo apt-get install python3-tk
 **Versión**: 1.0.0  
 **Autor**: PAC Development Team  
 **Fecha**: Diciembre 2025
-
-#### Mis notas
-Nuevo Flujo de Trabajo:
-Cuando me pidas algo:
-
-Te preguntaré si necesito aclaración
-Verificaré los archivos/DB primero
-Te mostraré el plan antes de ejecutar
-Esperaré tu confirmación si hay dudas
-
-1. Usuario pide cambio
-2. AI: "Primero voy a verificar..."
-3. AI ejecuta PRAGMA
-4. AI muestra schema
-5. AI pregunta confirmación
-6. Solo entonces programa
-
-# Para ver cambios futuros:
-git status
-
-# Para ver diferencias:
-git diff
-
-# Para hacer nuevos commits:
-git add .
-git commit -m "Descripción de cambios"
-
-# Para ver historial:
-git log --oneline --graph
